@@ -1,8 +1,10 @@
 """Moonshine (ONNX, CPU) run in this process: 16 kHz mono s16le PCM in, text out.
 
 Decoding is greedy and deterministic, so every request can be kept in the answer cache. Moonshine gives no timestamps
-and handles clips of a few seconds up to about 30: longer audio is cut at its quietest point near each 30 s mark and
-every piece becomes one segment (`start_s`/`end_s` are the cut points, `words` is always empty).
+and handles clips of a few seconds up to about 30, so the audio is split into phrases at pauses of 0.5 s or more
+(`phrases`); each phrase is one segment (`start_s`/`end_s` are its edges, `words` is always empty). A phrase followed by
+a pause is finished: its text is kept by a hash of its audio, so live dictation, which re-sends the whole growing
+window every second, only decodes the phrase being spoken. A phrase over 30 s is cut at its quietest point (`cuts`).
 One transcription runs at a time per replica (onnxruntime already uses every core); scale with replicas.
 Changing the CPU threads reloads the model (the sessions fix their threads when built); the next call loads it.
 
@@ -11,10 +13,12 @@ shortcut: PCM only, ffmpeg stays with the caller; English only."""
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import os
 import threading
 import uuid
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any, AsyncIterator, Callable, Iterator
 
@@ -27,6 +31,11 @@ CHUNK_SAMPLES = 30 * 16000  # longest piece sent to the model
 SEARCH_SAMPLES = 4 * 16000  # a cut is looked for in the last 4 s of a piece
 WINDOW_SAMPLES = 1600  # 100 ms; the quietest window is where the cut goes
 MIN_SAMPLES = 1600  # Moonshine needs at least 0.1 s
+FRAME_SAMPLES = 320  # 20 ms, the step of the level curve used to find pauses
+SPEECH_LEVEL = 0.01  # a frame is speech at this RMS or more (about -40 dBFS, of full scale 1.0)
+PAUSE_FRAMES = 25  # 0.5 s without speech ends a phrase
+PAD_FRAMES = 10  # 0.2 s of quiet kept on each side of a phrase
+PHRASES_KEPT = 256  # finished phrases remembered per loaded model
 
 _log = logging.getLogger(__name__)
 
@@ -57,27 +66,65 @@ def cuts(audio: Any) -> Iterator[tuple[int, int]]:
     yield start, count
 
 
+def phrases(audio: Any) -> Iterator[tuple[int, int, bool]]:
+    """(start, end, finished) sample ranges, one per phrase: speech with 0.2 s of quiet around it, split where 0.5 s or
+    more has no speech. `finished` means a pause follows, so the phrase cannot change when more audio arrives (its edges
+    depend only on its own audio and the pause after it). Audio with no frame over SPEECH_LEVEL (very quiet speech) is
+    one unfinished phrase.
+
+    shortcut: a fixed level, not a noise floor. In a room that never gets quieter than SPEECH_LEVEL there is no pause, and
+    the whole audio is one phrase, cut by `cuts` at 30 s; lower SPEECH_LEVEL or add a noise floor if that shows up."""
+    import numpy as np
+
+    frames = len(audio) // FRAME_SAMPLES
+    level = np.sqrt((audio[:frames * FRAME_SAMPLES].reshape(frames, FRAME_SAMPLES) ** 2).mean(axis=1)) if frames else np.zeros(0)
+    loud = np.flatnonzero(level >= SPEECH_LEVEL)
+    if not len(loud):
+        yield 0, len(audio), False
+        return
+    breaks = np.flatnonzero(np.diff(loud) > PAUSE_FRAMES)  # a loud frame at loud[i] is followed by a pause
+    firsts, lasts = loud[np.r_[0, breaks + 1]], loud[np.r_[breaks, len(loud) - 1]]
+    for number, (first, last) in enumerate(zip(firsts, lasts)):
+        finished = bool(number < len(breaks) or frames - (last + 1) >= PAUSE_FRAMES)
+        yield int(max(0, first - PAD_FRAMES) * FRAME_SAMPLES), int(min(len(audio), (last + 1 + PAD_FRAMES) * FRAME_SAMPLES)), finished
+
+
 class Loaded:
     """A loaded Moonshine model that transcribes one clip."""
 
     def __init__(self, model: Any, tokenizer: Any) -> None:
         self.model, self.tokenizer = model, tokenizer
+        self._kept: OrderedDict[bytes, str] = OrderedDict()  # finished phrase audio -> its text
+
+    def _text(self, piece: Any, finished: bool) -> str:
+        key = hashlib.sha1(piece.tobytes()).digest()
+        if key in self._kept:
+            self._kept.move_to_end(key)
+            return self._kept[key]
+        text = self.tokenizer.decode_batch(self.model.generate(piece[None]))[0].strip()
+        if finished:
+            self._kept[key] = text
+            if len(self._kept) > PHRASES_KEPT:
+                self._kept.popitem(last=False)
+        return text
 
     def stream(self, pcm: bytes, language: str | None, beam_size: int, words: bool,
                stop: threading.Event) -> Iterator[tuple[str, Any]]:
-        """("segment", dict) for each piece as it is decoded, then ("done", {"language"}). `beam_size` and `words` are
-        accepted for the Whisper-shaped API and ignored. Setting `stop` ends it after the piece being decoded."""
+        """("segment", dict) for each phrase as it is decoded, then ("done", {"language"}). `beam_size` and `words` are
+        accepted for the Whisper-shaped API and ignored. Setting `stop` ends it after the phrase being decoded."""
         import numpy as np
 
         audio = np.frombuffer(pcm, np.int16).astype(np.float32) / 32768.0
-        for start, end in cuts(audio):
-            if stop.is_set():
-                return
-            if end - start < MIN_SAMPLES:
-                continue
-            tokens = self.model.generate(audio[None, start:end])
-            text = self.tokenizer.decode_batch(tokens)[0].strip()
-            yield "segment", {"start_s": round(start / 16000, 2), "end_s": round(end / 16000, 2), "text": text, "words": []}
+        for first, last, finished in phrases(audio):
+            for start, end in cuts(audio[first:last]):
+                if stop.is_set():
+                    return
+                if end - start < MIN_SAMPLES:
+                    continue
+                piece = audio[first + start:first + end]
+                text = self._text(piece, finished or first + end < last)
+                yield "segment", {"start_s": round((first + start) / 16000, 2), "end_s": round((first + end) / 16000, 2),
+                                  "text": text, "words": []}
         yield "done", {"language": "en"}
 
 

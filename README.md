@@ -22,9 +22,12 @@ is 422; more than *Longest audio per call* (`MOONSHINE_MAX_SECONDS`, default 150
 `word_timestamps` (accepted so Whisper-shaped callers work, both ignored), `stream` (default `false`). Any other option
 is refused with 422.
 
-**Long audio.** Moonshine handles clips up to about 30 s. Longer audio is cut at the quietest 100 ms in the last 4 s of
-each 30 s piece, and each piece is one segment, so `segments` are about 30 s long (`start_s`/`end_s` are the cut
-points) and `words` is always empty.
+**Phrases.** Moonshine handles clips up to about 30 s, so the audio is split at pauses of 0.5 s or more and each phrase
+is one segment (`start_s`/`end_s` are its edges, with 0.2 s of quiet kept on each side). A phrase over 30 s is cut at its
+quietest point. `words` is always empty. A phrase followed by a pause is finished: its text is remembered (256 per loaded
+model, by a hash of its audio), so live dictation, which re-sends the whole growing window every second, only decodes
+the phrase being spoken. Speech level 0.01 (about -40 dBFS) counts as speech; a room that is never quieter than that
+has no pauses, and the audio is cut at 30 s instead.
 
 **Result.** `segments` are `{"start_s", "end_s", "text"}`; `words` is always empty; `text` joins the non-empty segments with a space. An empty `text` is valid (silence).
 
