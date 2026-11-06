@@ -91,11 +91,12 @@ class _Counting:
     """Stands in for the Moonshine library: `generate` records the length of each audio it gets, the tokenizer says it."""
 
     def __init__(self):
-        self.lengths = []
+        self.lengths, self.max_lens = [], []
         self.tokenizer = self
 
-    def generate(self, batch):
+    def generate(self, batch, max_len=None):
         self.lengths.append(batch.shape[1])
+        self.max_lens.append(max_len)
         return [[batch.shape[1]]]
 
     def decode_batch(self, tokens):
@@ -118,3 +119,9 @@ def test_growing_audio_only_decodes_the_phrase_being_spoken():
     before = len(fake.lengths)
     full = _text(loaded, audio)
     assert len(full) == 3 and full[:2] == first[:2] and len(fake.lengths) - before <= 2
+
+
+def test_the_length_of_what_a_phrase_may_say_follows_its_audio():
+    fake = _Counting()
+    _text(Loaded(fake, fake), _talk(1.0, 5.0))
+    assert fake.max_lens == [max(8, int(n / 16000 * 6)) for n in fake.lengths] and fake.max_lens[0] < fake.max_lens[1]

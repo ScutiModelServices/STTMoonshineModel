@@ -29,6 +29,10 @@ model, by a hash of its audio), so live dictation, which re-sends the whole grow
 the phrase being spoken. Speech level 0.01 (about -40 dBFS) counts as speech; a room that is never quieter than that
 has no pauses, and the audio is cut at 30 s instead.
 
+**Length cap.** The library stops a decode at 192 tokens whatever the audio length, so a cut-off phrase that falls into a
+repeat loop ("please please ...") ran to about 1,300 characters. Each phrase may now say at most 6 tokens per second of
+its audio (speech is 3 to 4), at least 8.
+
 **Result.** `segments` are `{"start_s", "end_s", "text"}`; `words` is always empty; `text` joins the non-empty segments with a space. An empty `text` is valid (silence).
 
 **Streaming, per segment.** With `stream=true` the reply is `application/x-ndjson`: one
