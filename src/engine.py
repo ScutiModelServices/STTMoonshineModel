@@ -36,6 +36,9 @@ SPEECH_LEVEL = 0.01  # a frame is speech at this RMS or more (about -40 dBFS, of
 PAUSE_FRAMES = 25  # 0.5 s without speech ends a phrase
 PAD_FRAMES = 10  # 0.2 s of quiet kept on each side of a phrase
 PHRASES_KEPT = 256  # finished phrases remembered per loaded model
+TOKENS_PER_SECOND = 6  # most a phrase may say per second of audio (speech is 3 to 4); the library stops at 192 tokens
+                       # whatever the length, so a cut-off phrase that loops ("please please ...") would run that far
+MIN_TOKENS = 8
 
 _log = logging.getLogger(__name__)
 
@@ -101,7 +104,8 @@ class Loaded:
         if key in self._kept:
             self._kept.move_to_end(key)
             return self._kept[key]
-        text = self.tokenizer.decode_batch(self.model.generate(piece[None]))[0].strip()
+        tokens = self.model.generate(piece[None], max_len=max(MIN_TOKENS, int(len(piece) / 16000 * TOKENS_PER_SECOND)))
+        text = self.tokenizer.decode_batch(tokens)[0].strip()
         if finished:
             self._kept[key] = text
             if len(self._kept) > PHRASES_KEPT:
