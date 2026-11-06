@@ -1,0 +1,29 @@
+[project]
+name = "moonshine-service"
+description = "One HTTP service that runs the Moonshine speech-to-text model (Moonshine ONNX) on the CPU for every project"
+version = "0.1.0"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "useful-moonshine-onnx",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0", "httpx>=0.27", "playwright>=1.40"]
+
+[tool.uv]
+package = false  # runs from src/, only the dependencies are installed
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+bypass-selection = true  # runs from src/, installs only the dependencies
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
