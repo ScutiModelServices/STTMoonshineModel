@@ -1,7 +1,7 @@
 # Deploying STT_Moonshine_Model
 
-STT_Moonshine_Model is one HTTP service (port 9240). It runs as `stt_moonshine_model` replicas behind an nginx load balancer,
-`stt_moonshine_model_lb`. Callers use `http://<host>:9240`; they never reach a replica directly.
+STT_Moonshine_Model is one HTTP service (port 29301). It runs as `stt_moonshine_model` replicas behind an nginx load balancer,
+`stt_moonshine_model_lb`. Callers use `http://<host>:29301`; they never reach a replica directly.
 
 ## Ways to run it
 

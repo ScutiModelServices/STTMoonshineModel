@@ -34,7 +34,7 @@ cd /media/ZimaOS-HD/Apps/STT_Moonshine_Model
 Create `.env` (deploy option 2 copies yours, or `cp .env.example .env` and edit):
 - `MOONSHINE_ADMIN_PASSWORD`: a real password.
 - `MOONSHINE_REPLICAS=1` unless you have the memory for more.
-- `MOONSHINE_PORT=9240` (published on all interfaces; firewall it if the LAN should not reach it, or bind it to
+- `MOONSHINE_PORT=29301` (published on all interfaces; firewall it if the LAN should not reach it, or bind it to
   `127.0.0.1` in the `ports:` line of `stt_moonshine_model_lb` when only callers on the machine need it).
 
 ## 3. Start
@@ -42,21 +42,21 @@ Create `.env` (deploy option 2 copies yours, or `cp .env.example .env` and edit)
 ```bash
 docker compose up -d --build
 docker compose ps
-curl http://127.0.0.1:9240/health
+curl http://127.0.0.1:29301/health
 ```
 The first start downloads about 250 MB of weights into the `stt_moonshine_model_models` volume; `stt_moonshine_model_lb` waits for a healthy service
 (up to 300 s grace).
 
 ## 4. Connect callers
 
-1. Open `http://<machine-ip>:9240/admin/`, sign in with the admin password and create one token per caller
+1. Open `http://<machine-ip>:29301/admin/`, sign in with the admin password and create one token per caller
    (see [guide-web-ui.md](guide-web-ui.md)).
 2. The caller holds the URL and token:
-   - Caller on another machine: `http://<machine-ip>:9240`.
-   - Caller in a Docker stack on the same machine: `http://host.docker.internal:9240`.
+   - Caller on another machine: `http://<machine-ip>:29301`.
+   - Caller in a Docker stack on the same machine: `http://host.docker.internal:29301`.
 3. Try a call from the machine:
    ```bash
-   ffmpeg -v error -i speech.wav -f s16le -ar 16000 -ac 1 - | curl -X POST http://127.0.0.1:9240/v1/transcribe -H "X-Internal-Token: moonshine_..." --data-binary @-
+   ffmpeg -v error -i speech.wav -f s16le -ar 16000 -ac 1 - | curl -X POST http://127.0.0.1:29301/v1/transcribe -H "X-Internal-Token: moonshine_..." --data-binary @-
    ```
 
 ## Scaling
@@ -87,7 +87,7 @@ A plain publish (`run.bat`, Deploy, option 1) only updates the `live` branch. Fo
 
 | Symptom | Fix |
 |---|---|
-| Caller cannot reach the service | Check the caller's URL and token, and that `curl http://<machine-ip>:9240/health` works. |
+| Caller cannot reach the service | Check the caller's URL and token, and that `curl http://<machine-ip>:29301/health` works. |
 | nginx 502 after an update | `docker compose restart stt_moonshine_model_lb`. |
 | Permission denied on push | run.bat Deploy option 6. |
-| Port 9240 in use | Another stack on the machine already publishes it. |
+| Port 29301 in use | Another stack on the machine already publishes it. |

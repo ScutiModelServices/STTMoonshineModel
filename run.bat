@@ -1,5 +1,5 @@
 @echo off
-REM Starts the Moonshine service on port 9240 (syncs .venv with uv on each run). The first start downloads the weights (about 250 MB).
+REM Starts the Moonshine service on port 29301 (syncs .venv with uv on each run). The first start downloads the weights (about 250 MB).
 REM LABEL: Moonshine Service
 REM DESCRIPTION: Shared HTTP service that runs Moonshine on the CPU for every project.
 cd /d "%~dp0"

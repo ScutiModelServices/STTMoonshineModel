@@ -61,16 +61,16 @@ next call loads it again. Set the value to the physical core count.
 ## Run
 
 ```bash
-docker compose up -d --build        # http://<host>:9240
+docker compose up -d --build        # http://<host>:29301
 ```
 
-Without Docker: `run.bat` (uv, listens on `127.0.0.1:9240`). The first transcription downloads the model (about 250 MB
+Without Docker: `run.bat` (uv, listens on `127.0.0.1:29301`). The first transcription downloads the model (about 250 MB
 for `base` float, less for `quantized` or `tiny`). See `deployment.md`.
 
 Example (needs `ffmpeg`):
 
 ```bash
-ffmpeg -v error -i speech.wav -f s16le -ar 16000 -ac 1 - | curl -X POST "http://127.0.0.1:9240/v1/transcribe" \
+ffmpeg -v error -i speech.wav -f s16le -ar 16000 -ac 1 - | curl -X POST "http://127.0.0.1:29301/v1/transcribe" \
   -H "X-Internal-Token: moonshine_..." --data-binary @-
 ```
 

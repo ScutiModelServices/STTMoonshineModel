@@ -399,7 +399,7 @@ def main() -> None:
         client.num_thread = int(threads)
     app = create_app(client=client, admin_password=os.environ.get("MOONSHINE_ADMIN_PASSWORD") or None,
                      tokens=store, config=config)
-    uvicorn.run(app, host=os.environ.get("MOONSHINE_HOST", "127.0.0.1"), port=int(os.environ.get("MOONSHINE_PORT", "9240")))
+    uvicorn.run(app, host=os.environ.get("MOONSHINE_HOST", "127.0.0.1"), port=int(os.environ.get("MOONSHINE_PORT", "29301")))
 
 
 if __name__ == "__main__":
