@@ -5,6 +5,11 @@ Moonshine (`useful-moonshine-onnx`, `base`, float, CPU) served over HTTP, behind
 ## Agent instructions
 This file is the one instruction file for every coding agent; `CLAUDE.md` only imports it (`@AGENTS.md`). Edit this file, never `CLAUDE.md`.
 
+## Commands (from this folder, venv `.venv`, managed by uv)
+- Install: `uv sync` (`winget install astral-sh.uv` if uv is missing)
+- Test: `uv run pytest -q` (fake model, no weights). `tests/test_admin_ui.py` needs Playwright and its browser and is skipped without it. On Windows, if uv fails with "cannot move the file to a different disk drive", set `UV_CACHE_DIR` to a folder on the same drive and `UV_LINK_MODE=copy`.
+- Run: `run.bat run`, or `uv run python src/app.py`, or `docker compose up -d --build`
+
 ## Rules
 - Follow the `model-service-parity` skill and `AI/ModelServices/_docs/SHARED-FEATURES.md` (what must match in every model service) and `AI/ModelServices/_docs/SERVICE-SPECIFIC.md` (what differs on purpose). A change to a shared feature goes to every service; a new difference goes into `SERVICE-SPECIFIC.md` in the same change.
 - `web/index.html`, `src/tokens.py`, `src/settings.py`, `src/updates.py` and `.dockerignore` are copies shared with the other model services. Change one, copy it to the others, run `python tools/check_sync.py` in each repo.
@@ -13,6 +18,5 @@ This file is the one instruction file for every coding agent; `CLAUDE.md` only i
 - Changing `num_thread` drops the loaded model: the library builds its onnxruntime sessions without a thread option, so `engine.load` swaps `onnxruntime.InferenceSession` for the duration of the build to set `intra_op_num_threads`; the next call reloads the model. This also bumps `generation`, which empties the cache.
 - Weights are the Hub repo `UsefulSensors/moonshine`, folder `onnx/merged/<model>/<compute_type>`; `engine.load` uses the cached files when present and downloads only that folder otherwise. The Updates card compares the whole repository revision. The library needs `model_name` even with `models_dir`, and bundles its own tokenizer.
 - Behaviour changes update `README.md`, `deployment.md`, `docs/guide-web-ui.md`, `.env.example` and `CHANGELOG.md` in the same commit.
-- Tests: `uv run pytest -q` (fake model, no weights). `tests/test_admin_ui.py` needs Playwright and its browser and is skipped without it. On Windows, if uv fails with "cannot move the file to a different disk drive", set `UV_CACHE_DIR` to a folder on the same drive and `UV_LINK_MODE=copy`.
 - Never read or print `.env`, `tokens.json` or `settings.json`.
 - Commit with the noreply author email `214214011+scutiii2@users.noreply.github.com` (another address is rejected on push). Push `main`, then run `python tools/publish_live.py`. Build Docker only when the Dockerfile or the dependencies changed.
