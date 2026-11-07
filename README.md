@@ -106,3 +106,4 @@ Transcribe accepts an audio file and sends raw 16 kHz mono signed 16-bit little-
 - [Docker on another machine](docs/guide-docker-deployment-device.md)
 - [Docker on this PC](docs/guide-docker-same-device.md)
 - [Run without Docker](docs/guide-no-docker-same-device.md)
+- [Test it from the command line](docs/guide-cli.md)
