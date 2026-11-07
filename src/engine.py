@@ -184,7 +184,7 @@ def _cached_sha(repo: str) -> str | None:
 
 def default_marker() -> Path:
     """File in the shared models volume whose content changes when one replica downloads new weights."""
-    configured = os.environ.get("MOONSHINE_WEIGHTS_MARKER")
+    configured = os.environ.get("SERVICE_WEIGHTS_MARKER")
     return Path(configured) if configured else Path(os.environ.get("HF_HOME") or "~/.cache/huggingface").expanduser() / ".moonshine-weights-version"
 
 

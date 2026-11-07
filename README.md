@@ -5,7 +5,7 @@ Projects send 16 kHz mono PCM over HTTP and get text and segments back. English 
 tokens, rate limits, metrics, settings and update checks as the other model services.
 
 It is the model half of `AI/ToolServices/Scribe`: Scribe keeps ffmpeg decoding, per-user quota, the upload store and live
-dictation, and calls this service for the transcription (`SCRIBE_WHISPER_URL`).
+dictation, and calls this service for transcription through a connection saved on Scribe's admin page.
 
 ## API
 
@@ -16,7 +16,7 @@ dictation, and calls this service for the transcription (`SCRIBE_WHISPER_URL`).
 
 **Input.** The body is 16 kHz, mono, signed 16-bit little-endian PCM (`application/octet-stream`), what
 `ffmpeg -f s16le -ar 16000 -ac 1` makes. The service does not decode other formats. An empty body or an odd byte count
-is 422; more than *Longest audio per call* (`MOONSHINE_MAX_SECONDS`, default 150, at most 900) is 413.
+is 422; more than *Longest audio per call* (`SERVICE_MAX_SECONDS`, default 150, at most 900) is 413.
 
 **Query options.** `language` (default `en`; `auto` is the same as `en`; any other code is 422), `beam_size` and
 `word_timestamps` (accepted so Whisper-shaped callers work, both ignored), `stream` (default `false`). Any other option
@@ -40,7 +40,7 @@ its audio (speech is 3 to 4), at least 8.
 call without `stream` returns. A refusal before the first segment is a normal HTTP error; a failure after it is sent as
 `{"type": "error", "status", "message"}` and ends the stream. A kept answer is streamed back segment by segment.
 
-**Cache.** *Answers kept per replica* (`MOONSHINE_CACHE_SIZE`, default 256, 0 = off) keeps the last answers for the same
+**Cache.** *Answers kept per replica* (`SERVICE_CACHE_SIZE`, default 256, 0 = off) keeps the last answers for the same
 audio and options and sends them again without transcribing (`X-Cache: hit`). Decoding is deterministic, so every request
 is kept. New weights empty the cache. The cache is per replica, so with N replicas the hit rate is about 1/N.
 
@@ -48,7 +48,7 @@ is kept. New weights empty the cache. The cache is per replica, so with N replic
 
 ## Admin page
 
-`/admin/` (password `MOONSHINE_ADMIN_PASSWORD`): tokens with rate limit and expiry, usage numbers, CPU threads, the
+`/admin/` (password `SERVICE_ADMIN_PASSWORD`): tokens with rate limit and expiry, usage numbers, CPU threads, the
 Settings card (update check hours, in-flight cap, answers kept, longest audio, and the restart options
 model, number format, load at start), and the Updates card (**Check now** and **Download new weights** for the Hugging
 Face repository). New weights are downloaded once into the shared models volume; the other replicas notice within a few

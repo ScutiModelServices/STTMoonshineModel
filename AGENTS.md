@@ -1,6 +1,6 @@
 # STT_Moonshine_Model
 
-Moonshine (`useful-moonshine-onnx`, `base`, float, CPU) served over HTTP, behind the shared model-service admin page, tokens and settings. Port 29301, env prefix `MOONSHINE_`, token prefix `moonshine_`. A drop-in for `STT_Whisper_Model`'s `POST /v1/transcribe` shape (English only, no word timestamps); the caller decodes audio. Built from `STT_Whisper_Model`.
+Moonshine (`useful-moonshine-onnx`, `base`, float, CPU) served over HTTP, behind the shared model-service admin page, tokens and settings. Port 29301, env prefix `SERVICE_`, token prefix `moonshine_`. A drop-in for `STT_Whisper_Model`'s `POST /v1/transcribe` shape (English only, no word timestamps); the caller decodes audio. Built from `STT_Whisper_Model`.
 
 ## Agent instructions
 This file is the one instruction file for every coding agent; `CLAUDE.md` only imports it (`@AGENTS.md`). Edit this file, never `CLAUDE.md`.

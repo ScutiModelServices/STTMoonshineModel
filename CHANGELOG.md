@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+### Breaking: common service environment variables
+
+Service-owned environment variables now use `SERVICE_*`. Old names are no longer read.
+Rename old names once in your real `.env`, Compose `environment:` block, and CI/secret settings.
+
+| Old name | New name |
+|---|---|
+| `MOONSHINE_ADMIN_PASSWORD` | `SERVICE_ADMIN_PASSWORD` |
+| `MOONSHINE_CACHE_SIZE` | `SERVICE_CACHE_SIZE` |
+| `MOONSHINE_COMPUTE_TYPE` | `SERVICE_COMPUTE_TYPE` |
+| `MOONSHINE_HOST` | `SERVICE_HOST` |
+| `MOONSHINE_MAX_INFLIGHT` | `SERVICE_MAX_INFLIGHT` |
+| `MOONSHINE_MAX_SECONDS` | `SERVICE_MAX_SECONDS` |
+| `MOONSHINE_MEM_LIMIT` | `SERVICE_MEM_LIMIT` |
+| `MOONSHINE_MODEL` | `SERVICE_MODEL` |
+| `MOONSHINE_NUM_THREAD` | `SERVICE_NUM_THREAD` |
+| `MOONSHINE_PORT` | `SERVICE_PORT` |
+| `MOONSHINE_REPLICAS` | `SERVICE_REPLICAS` |
+| `MOONSHINE_TOKENS_FILE` | `SERVICE_TOKENS_FILE` |
+| `MOONSHINE_UPDATE_CHECK_HOURS` | `SERVICE_UPDATE_CHECK_HOURS` |
+| `MOONSHINE_WARM` | `SERVICE_WARM` |
+| `MOONSHINE_WEB_DIR` | `SERVICE_WEB_DIR` |
+| `MOONSHINE_WEIGHTS_MARKER` | `SERVICE_WEIGHTS_MARKER` |
+
 - Move the default service port from 9240 to 29301, including API replicas and the nginx load balancer. Update any explicit old port in your real `.env`, saved tool-service `backends.json` connections, and browser or MCP client configuration once. With Compose defaults, recreate the stack to use the new host and container ports; a custom host-port override stays as configured, while container ports still change to 29301.
 
 - Renamed `STTMoonshineModel` to `STT_Moonshine_Model`; Docker project, API image, services, load balancer and volumes now use `stt_moonshine_model` names. Callers on `citadel_core` connect to `stt_moonshine_model_lb` at the existing port.

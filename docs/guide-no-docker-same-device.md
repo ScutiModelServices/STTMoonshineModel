@@ -23,14 +23,14 @@ uv run python src/app.py
 
 | Variable | Default | Effect |
 |---|---|---|
-| `MOONSHINE_HOST` | `127.0.0.1` | Bind address. Use `0.0.0.0` only if other devices must reach it. |
-| `MOONSHINE_PORT` | `29301` | Port. |
-| `MOONSHINE_ADMIN_PASSWORD` | empty | Unlocks `/admin/` and requires tokens on every call but `/health`. Empty = no auth. |
-| `MOONSHINE_WARM` | `1` | Load the model at start; with `0` the first request pays the load time. |
-| `MOONSHINE_NUM_THREAD` | the library decides | CPU threads. Set it to the number of **physical** cores. |
+| `SERVICE_HOST` | `127.0.0.1` | Bind address. Use `0.0.0.0` only if other devices must reach it. |
+| `SERVICE_PORT` | `29301` | Port. |
+| `SERVICE_ADMIN_PASSWORD` | empty | Unlocks `/admin/` and requires tokens on every call but `/health`. Empty = no auth. |
+| `SERVICE_WARM` | `1` | Load the model at start; with `0` the first request pays the load time. |
+| `SERVICE_NUM_THREAD` | the library decides | CPU threads. Set it to the number of **physical** cores. |
 
-PowerShell: `$env:MOONSHINE_ADMIN_PASSWORD = "secret"; .\run.bat`
-Bash: `MOONSHINE_ADMIN_PASSWORD=secret uv run python src/app.py`
+PowerShell: `$env:SERVICE_ADMIN_PASSWORD = "secret"; .\run.bat`
+Bash: `SERVICE_ADMIN_PASSWORD=secret uv run python src/app.py`
 
 ## Check
 ```bash

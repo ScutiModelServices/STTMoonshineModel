@@ -5,7 +5,7 @@ Run Moonshine on the CPU in Docker Desktop on the machine you work on, so other 
 ## Requirements
 
 - Docker Desktop with Compose v2 (Windows: WSL2 backend).
-- About 0.5 GB of RAM **per replica** for `base.en` (each replica holds the model); `small.en` needs about 1 GB. Keep `MOONSHINE_REPLICAS=1` on a PC. Docker Desktop on Windows caps its engine at about half of your RAM unless you raise it in `.wslconfig`.
+- About 0.5 GB of RAM **per replica** for `base.en` (each replica holds the model); `small.en` needs about 1 GB. Keep `SERVICE_REPLICAS=1` on a PC. Docker Desktop on Windows caps its engine at about half of your RAM unless you raise it in `.wslconfig`.
 - Network access on the first start to download the weights (about 150 MB for `base.en`) from Hugging Face.
 - CPU only (onnxruntime).
 
@@ -15,7 +15,7 @@ Run Moonshine on the CPU in Docker Desktop on the machine you work on, so other 
    ```bash
    cp .env.example .env
    ```
-   Set `MOONSHINE_ADMIN_PASSWORD` (empty = no auth and no admin page, fine for a local test). Leave `MOONSHINE_PORT=29301`. Leave `MOONSHINE_REPLICAS=1`.
+   Set `SERVICE_ADMIN_PASSWORD` (empty = no auth and no admin page, fine for a local test). Leave `SERVICE_PORT=29301`. Leave `SERVICE_REPLICAS=1`.
 2. Start:
    ```bash
    docker compose up -d --build
@@ -43,16 +43,16 @@ In `.env` next to `docker-compose.yml`:
 
 | Variable | Default | Effect |
 |---|---|---|
-| `MOONSHINE_REPLICAS` | `1` | Number of `stt_moonshine_model` containers. Read by Compose. |
-| `MOONSHINE_MEM_LIMIT` | `0` (no cap) | RAM cap per container, for example `1g` (`base` float uses about 0.5 GiB; measure with `docker stats`). An out-of-memory kill then stays in the container instead of starving the host. Read by Compose. |
-| `MOONSHINE_PORT` | `29301` | Host port `stt_moonshine_model_lb` publishes. |
-| `MOONSHINE_ADMIN_PASSWORD` | empty | Password for `/admin/`. When set, every call except `/health` must send a token as `X-Internal-Token`. Empty = no auth. |
-| `MOONSHINE_NUM_THREAD` | onnxruntime decides | Starting value for the CPU threads card; a value saved on `/admin/` wins. Use the number of physical cores (`lscpu`: cores x sockets), not logical CPUs; more threads than cores slows every call. Changing it reloads the model on that replica; the next call loads it again. |
+| `SERVICE_REPLICAS` | `1` | Number of `stt_moonshine_model` containers. Read by Compose. |
+| `SERVICE_MEM_LIMIT` | `0` (no cap) | RAM cap per container, for example `1g` (`base` float uses about 0.5 GiB; measure with `docker stats`). An out-of-memory kill then stays in the container instead of starving the host. Read by Compose. |
+| `SERVICE_PORT` | `29301` | Host port `stt_moonshine_model_lb` publishes. |
+| `SERVICE_ADMIN_PASSWORD` | empty | Password for `/admin/`. When set, every call except `/health` must send a token as `X-Internal-Token`. Empty = no auth. |
+| `SERVICE_NUM_THREAD` | onnxruntime decides | Starting value for the CPU threads card; a value saved on `/admin/` wins. Use the number of physical cores (`lscpu`: cores x sockets), not logical CPUs; more threads than cores slows every call. Changing it reloads the model on that replica; the next call loads it again. |
 
 On the **Settings** card of `/admin/` (saved in `settings.json` beside the tokens, shared by all replicas; a saved
-value beats the environment variable named in brackets): update check hours (`MOONSHINE_UPDATE_CHECK_HOURS`, 6),
-in-flight cap (`MOONSHINE_MAX_INFLIGHT`, 0 = 4), answers kept per replica (`MOONSHINE_CACHE_SIZE`, 256, 0 = off), longest audio per call (`MOONSHINE_MAX_SECONDS`, 150, at most 900), base model
-(`MOONSHINE_MODEL`, restart; `base` or `tiny`), number format (`MOONSHINE_COMPUTE_TYPE`, restart: `float` or `quantized`) and load at start (`MOONSHINE_WARM`, restart). Compose does not pass these; add the variable
+value beats the environment variable named in brackets): update check hours (`SERVICE_UPDATE_CHECK_HOURS`, 6),
+in-flight cap (`SERVICE_MAX_INFLIGHT`, 0 = 4), answers kept per replica (`SERVICE_CACHE_SIZE`, 256, 0 = off), longest audio per call (`SERVICE_MAX_SECONDS`, 150, at most 900), base model
+(`SERVICE_MODEL`, restart; `base` or `tiny`), number format (`SERVICE_COMPUTE_TYPE`, restart: `float` or `quantized`) and load at start (`SERVICE_WARM`, restart). Compose does not pass these; add the variable
 under `environment:` of `stt_moonshine_model` to use one as a starting value.
 
 ## Daily use
@@ -68,12 +68,12 @@ docker compose up -d --build && docker compose restart stt_moonshine_model_lb   
 
 | Symptom | Fix |
 |---|---|
-| `address already in use` on 29301 | Another copy (`run.bat`, or the same stack on another compose project) is running. Stop it or change `MOONSHINE_PORT`. |
+| `address already in use` on 29301 | Another copy (`run.bat`, or the same stack on another compose project) is running. Stop it or change `SERVICE_PORT`. |
 | `/health` shows `ready: false` for minutes | First start: the weights are downloading or loading. Check `docker compose logs -f stt_moonshine_model`. |
 | 401 Invalid token | The caller's token is missing or revoked; make one on `/admin/`. |
 | Container restarts in a loop | Out of RAM. Raise the Docker Desktop memory limit or lower the replica count. |
 | `stt_moonshine_model_lb` never starts | No replica is healthy yet (first download, or out of memory). `docker compose logs stt_moonshine_model`. |
-| Replicas restart in a loop | Out of RAM. Lower `MOONSHINE_REPLICAS`. |
+| Replicas restart in a loop | Out of RAM. Lower `SERVICE_REPLICAS`. |
 | 422 on `/v1/transcribe` | An empty body, an odd byte count (the body must be 16 kHz mono s16le PCM), an unknown query option, or a language other than `en` on a `.en` model. |
 | 413 | The audio is longer than *Longest audio per call*. |
 | 429 | Over the token's rate limit, or too many calls waiting for the model. |

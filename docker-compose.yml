@@ -1,7 +1,7 @@
 # Moonshine service: N API replicas behind one nginx address. Each replica runs the model in its own process,
 # so RAM use is per replica; the downloaded weights are shared through the models volume.
 # Start:  docker compose up -d --build          (callers use http://<host>:29301)
-# Scale:  MOONSHINE_REPLICAS=3 docker compose up -d --build, then: docker compose restart stt_moonshine_model_lb
+# Scale:  SERVICE_REPLICAS=3 docker compose up -d --build, then: docker compose restart stt_moonshine_model_lb
 
 name: stt_moonshine_model
 
@@ -10,16 +10,16 @@ services:
     build: .
     image: stt_moonshine_model:latest
     restart: unless-stopped
-    mem_limit: ${MOONSHINE_MEM_LIMIT:-0}  # 0 = no cap; a cap makes an out-of-memory kill stay inside this container
+    mem_limit: ${SERVICE_MEM_LIMIT:-0}  # 0 = no cap; a cap makes an out-of-memory kill stay inside this container
     environment:
-      MOONSHINE_ADMIN_PASSWORD: ${MOONSHINE_ADMIN_PASSWORD:-}
-      MOONSHINE_NUM_THREAD: ${MOONSHINE_NUM_THREAD:-}
-      MOONSHINE_REPLICAS: ${MOONSHINE_REPLICAS:-1}  # shown read-only on /admin/
+      SERVICE_ADMIN_PASSWORD: ${SERVICE_ADMIN_PASSWORD:-}
+      SERVICE_NUM_THREAD: ${SERVICE_NUM_THREAD:-}
+      SERVICE_REPLICAS: ${SERVICE_REPLICAS:-1}  # shown read-only on /admin/
     volumes:
       - stt_moonshine_model_models:/models
       - stt_moonshine_model_data:/data
     deploy:
-      replicas: ${MOONSHINE_REPLICAS:-1}
+      replicas: ${SERVICE_REPLICAS:-1}
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:29301/health')"]
       interval: 15s
@@ -32,7 +32,7 @@ services:
     image: nginx:1.27-alpine
     restart: unless-stopped
     ports:
-      - "${MOONSHINE_PORT:-29301}:29301"
+      - "${SERVICE_PORT:-29301}:29301"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
