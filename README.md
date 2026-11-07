@@ -92,9 +92,17 @@ The tests use a fake model; none loads real weights. `tools/smoke.py` runs the r
 - English only; no punctuation or casing control, no timestamps inside a piece.
 - Model errors are never sent to the caller (they can hold paths): the reply is "Transcription failed. Try again."
 
-
 ## Try it from the admin page
 
 Open `/admin/` and use **Try it** to call the public API with a service token held only in memory. Runs use normal token scopes, limits and caches; the panel shows HTTP status, latency, responses, cancellation and a curl equivalent with a token placeholder. See [the web UI guide](docs/guide-web-ui.md#try-it-send-a-real-request).
 
 Transcribe accepts an audio file and sends raw 16 kHz mono signed 16-bit little-endian PCM to `POST /v1/transcribe`. Browser-decodable encoded audio is converted in the browser; raw `.pcm` input must already have that format. Language, beam size, word timestamps and streaming are query options. Decoded audio is capped at 150 seconds in the browser; the server can impose a lower limit. The curl body for converted audio is `@input.pcm`, not the original encoded file.
+
+## Documentation
+
+- [Purpose: input, output and what it is for](docs/purpose.md)
+- [Deployment](deployment.md)
+- [Changelog](CHANGELOG.md)
+- [Docker on another machine](docs/guide-docker-deployment-device.md)
+- [Docker on this PC](docs/guide-docker-same-device.md)
+- [Run without Docker](docs/guide-no-docker-same-device.md)

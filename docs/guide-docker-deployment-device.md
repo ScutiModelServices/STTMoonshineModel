@@ -4,10 +4,12 @@ Run Moonshine on the CPU on a separate always-on machine (default `lex@scutiserv
 `/media/ZimaOS-HD/Apps/STTMoonshineModel`). Callers reach it over the published port.
 
 ## Requirements on the machine
+
 - Docker + Compose v2, and ssh access (root over ssh is refused; use the normal user).
 - Enough RAM for the model times `MOONSHINE_REPLICAS`.
 
 ## 1. Publish the code (from your PC)
+
 Run `STTMoonshineModel\tools\deploy.bat`. Menu:
 
 | Option | Does |
@@ -23,6 +25,7 @@ Keep your own target in the git-ignored `tools\deploy.local.bat` (copy `tools\de
 `DEPLOY_HOST`, `DEPLOY_DIR` and `DEPLOY_WEB_PORT` before running. Commit `main` first: publish reads committed `main`.
 
 ## 2. First-time setup on the machine
+
 ```bash
 mkdir -p /media/ZimaOS-HD/Apps
 git clone -b live <your-repo-url> /media/ZimaOS-HD/Apps/STTMoonshineModel
@@ -35,6 +38,7 @@ Create `.env` (deploy option 2 copies yours, or `cp .env.example .env` and edit)
   `127.0.0.1` in the `ports:` line of `moonshine_lb` when only callers on the machine need it).
 
 ## 3. Start
+
 ```bash
 docker compose up -d --build
 docker compose ps
@@ -44,6 +48,7 @@ The first start downloads about 250 MB of weights into the `models` volume; `moo
 (up to 300 s grace).
 
 ## 4. Connect callers
+
 1. Open `http://<machine-ip>:9240/admin/`, sign in with the admin password and create one token per caller
    (see [guide-web-ui.md](guide-web-ui.md)).
 2. The caller holds the URL and token:
@@ -54,7 +59,17 @@ The first start downloads about 250 MB of weights into the `models` volume; `moo
    ffmpeg -v error -i speech.wav -f s16le -ar 16000 -ac 1 - | curl -X POST http://127.0.0.1:9240/v1/transcribe -H "X-Internal-Token: moonshine_..." --data-binary @-
    ```
 
+## Scaling
+
+```bash
+MOONSHINE_REPLICAS=3 docker compose up -d --build
+docker compose restart moonshine_lb
+```
+
+The restart is needed because nginx resolves replica addresses once at start.
+
 ## Updating
+
 ```bash
 cd /media/ZimaOS-HD/Apps/STTMoonshineModel
 git pull
@@ -62,7 +77,14 @@ docker compose up -d --build
 docker compose restart moonshine_lb
 ```
 
+## Releasing
+
+A plain publish (`tools\deploy.bat` option 1) only updates the `live` branch. For a release set `VERSION` (and
+`pyproject.toml` to the same number), commit, then run `tools\deploy.bat` option R or
+`py tools\publish_live.py --release`. `tools\make_zip.bat` then builds `zip_versions\STTMoonshineModel-<VERSION>.zip`.
+
 ## Problems
+
 | Symptom | Fix |
 |---|---|
 | Caller cannot reach the service | Check the caller's URL and token, and that `curl http://<machine-ip>:9240/health` works. |
