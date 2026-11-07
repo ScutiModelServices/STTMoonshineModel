@@ -1,4 +1,4 @@
-# STTMoonshineModel: without Docker, on Windows
+# STT_Moonshine_Model: without Docker, on Windows
 
 Run Moonshine on the CPU directly with Python: one process, no load balancer, listening on `127.0.0.1:9240`.
 
@@ -8,12 +8,12 @@ Run Moonshine on the CPU directly with Python: one process, no load balancer, li
 - RAM for the model (one copy).
 
 ## Start
-Double-click `run.bat`, or run it in a terminal from `STTMoonshineModel\`. Choose **1 Run the service** in the menu, or run `run.bat run` to skip the menu. It runs `uv sync` to create or update `.venv`, then starts
+Double-click `run.bat`, or run it in a terminal from `STT_Moonshine_Model\`. Choose **1 Run the service** in the menu, or run `run.bat run` to skip the menu. It runs `uv sync` to create or update `.venv`, then starts
 `python src/app.py`. The first start downloads about 250 MB of weights.
 
 Linux or macOS:
 ```bash
-cd STTMoonshineModel
+cd STT_Moonshine_Model
 uv sync
 uv run python src/app.py
 ```

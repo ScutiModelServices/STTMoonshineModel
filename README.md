@@ -1,4 +1,4 @@
-# STTMoonshineModel
+# STT_Moonshine_Model
 
 The one place Moonshine speech-to-text is served: Useful Sensors' Moonshine (ONNX, `useful-moonshine-onnx`) with `base` by default, on the CPU.
 Projects send 16 kHz mono PCM over HTTP and get text and segments back. English only, no word timestamps. It has the same admin page,

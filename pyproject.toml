@@ -1,5 +1,5 @@
 [project]
-name = "moonshine-service"
+name = "stt_moonshine_model"
 description = "One HTTP service that runs the Moonshine speech-to-text model (Moonshine ONNX) on the CPU for every project"
 version = "0.1.0"
 license = "MIT"
