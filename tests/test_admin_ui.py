@@ -222,3 +222,15 @@ def test_playground_decodes_wav_to_public_pcm_contract(page):
     assert page.evaluate("window.sentPcmBytes") == 32000
     assert sent[0].headers["content-type"] == "application/octet-stream"
     assert "@input.pcm" in page.locator("#pg-curl").text_content()
+
+
+def test_connect_card_lists_the_addresses_other_services_can_use(page):
+    page.fill("#admin", PASSWORD)
+    page.click("#signin-button")
+    sync_api.expect(page.locator("#dashboard")).to_be_visible()
+    card = page.locator("#connect-card")
+    sync_api.expect(card).to_contain_text("The address you opened this page with")
+    sync_api.expect(card).to_contain_text("host.docker.internal")
+    sync_api.expect(card).to_contain_text("/health")
+    port = page.url.split(":")[2].split("/")[0]
+    sync_api.expect(card).to_contain_text("http://127.0.0.1:" + port)
